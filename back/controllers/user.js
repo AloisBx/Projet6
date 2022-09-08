@@ -4,11 +4,11 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 var passwordSchema = require("../models/passwordModel");
 const validator = require("validator");
+require("dotenv").config();
 
 // gestion inscription
 exports.signup = (req, res, next) => {
   const valideEmail = validator.isEmail(req.body.email);
-  console.log(req.body.password);
   const validePassword = passwordSchema.validate(req.body.password);
   if (valideEmail === true && validePassword === true) {
     bcrypt.hash(req.body.password, 10)
@@ -18,12 +18,12 @@ exports.signup = (req, res, next) => {
           password: hash,
         });
         user.save(function (error) {
-          if (error){
+          if (error) {
             return res.status(400).json({ error });
-          }else{
+          } else {
             res.status(201).json({ message: "Utilisateur créé !" })
           }
-        }); 
+        });
       })
       .catch((error) => res.status(500).json({ error }));
   } else {
@@ -39,22 +39,28 @@ exports.login = (req, res, next) => {
       if (!user) {
         return res.status(401).json({ error });
       }
-      bcrypt.compare(req.body.password, user.password)
-        .then((valid) => {
-          if (!valid) {
-            return res.status(401).json({ error });
-          }
+      bcrypt.compare(req.body.password, user.password, function (error, result) {
+        if (error) {
+          return res.status(500).json({ error });
+        }
+        if (result) {
+          const token = jwt.sign(
+            {
+              userId: user._id
+            },
+            process.env.TOKEN_SECRET_ALEATOIRE,
+            {
+              expiresIn: process.env.TOKEN_TEMP
+            }
+          );
           res.status(201).json({
-            userId: user._id,
-            token: jwt.sign(
-              { userId: user._id },
-              process.env.TOKEN_SECRET_ALEATOIRE,
-              { expiresIn: process.env.TOKEN_TEMP }
-            ),
+            message: "Authentification réussie !",
+            token: token
           });
-        })
-        .catch((error) => res.status(500).json({ error }));
-        
-    })
-    .catch((error) => res.status(500).json({ error }));
+        } else {
+          return res.status(401).json({ error });
+        };
+      });
+    }
+    )
 };
