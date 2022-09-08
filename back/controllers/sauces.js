@@ -2,7 +2,10 @@ const Sauce = require("../models/sauceModel");
 const fs = require("fs");
 const { error } = require("console");
 
+console.log("ici");
+
 exports.getAllSauce = (req, res, next) => {
+    console.log("là");
     Sauce.find()
         .then((sauces) => {
             res.status(200).json(sauces);
@@ -44,26 +47,26 @@ exports.createSauce = (req, res, next) => {
             sauce.heat = 0;
             console.log("valeur heat invalide, heat initialisé");
         }
-        sauce.save()
-            .then(() =>
-                res
-                    .status(201)
-                    .json({ message: "Sauce enregistrée !" })
-            )
-            .catch((error) => res.status(400).json({ error }));
+        sauce.save(function (error) {
+            if (error) {
+                return res.status(400).json({ error });
+            } else {
+                res.status(201).json({ message: "Sauce enregistrée avec succès !" });
+            }
+        });
     } else {
-        const sauce = new Sauce({...sauceObject, imageUrl: `${req.protocol}://${req.get("host")}/images/defaut/imagedefaut.png`, ...initialisation,});
+        const sauce = new Sauce({ ...sauceObject, imageUrl: `${req.protocol}://${req.get("host")}/images/defaut/imagedefaut.png`, ...initialisation, });
         if (sauce.heat < 0 || sauce.heat > 10) {
             sauce.heat = 0;
             console.log("valeur heat invalide, heat initialisé");
         }
-        sauce.save()
-            .then(() =>
-                res
-                    .status(201)
-                    .json({ message: "Sauce enregistrée avec succès!" })
-            )
-            .catch((error) => res.status(400).json({ error }));
+        sauce.save(function (error) {
+            if (error) {
+                return res.status(400).json({ error });
+            } else {
+                res.status(201).json({ message: "Sauce enregistrée avec succès !" });
+            }
+        });
     }
 };
 
@@ -170,7 +173,7 @@ exports.deleteSauce = (req, res, next) => {
                         )
                         .catch((error) => res.status(400).json({ error }));
                 });
-                } else {
+            } else {
                 Sauce.deleteOne({ _id: req.params.id })
                     .then(() =>
                         res
